@@ -1,53 +1,92 @@
-// Hoàng Nguyên Vũ
-// 202419020
+//Hoàng Nguyên Vũ 
+//202419020
 using System;
+
 namespace DeviceManagement
 {
     public abstract class Device
     {
-        protected string deviceID {get; }
-        protected string deviceName;
-        protected int usageYear;
-        protected decimal purchasePrice;
-        public enum DeviceStatus
-        {
-            Active,
-            UnderMaintenance,
-            Retired
-        }
+        protected string deviceId;
+        protected string name;
+        protected int yearOfUse;
+        protected decimal price;
         protected DeviceStatus status;
-        public string DeviceID => deviceID;
-        public DeviceStatus Status => status;
-        public int UsageYear => usageYear;
-        public int Age => DateTime.Now.Year - usageYear;   // số năm đã dùng
-        public Device(string deviceID, string deviceName, int usageYear, decimal purchasePrice, DeviceStatus status = DeviceStatus.Active)
+
+        public Device(string deviceId, string name, int yearOfUse, decimal price, DeviceStatus status = DeviceStatus.Available)
         {
-            if (deviceID == null || deviceID == "")
+            if (deviceId == null || deviceId == "")
             {
-                throw new ArgumentException("Mã thiết bị không rỗng");
+                throw new ArgumentException("Mã thiết bị không được để trống.");
             }
-            if (deviceName == null || deviceName == "")
+            if (name == null || name == "")
             {
-                throw new ArgumentException("Tên thiết bị không rỗng");
+                throw new ArgumentException("Tên thiết bị không được để trống.");
             }
-            if (usageYear > 2026)
+            if (yearOfUse > DateTime.Now.Year)
             {
-                throw new ArgumentException("Năm sử dụng không lớn hơn năm hiện tại");
+                throw new ArgumentException("Năm đưa vào sử dụng không được lớn hơn năm hiện tại.");
             }
-            if (purchasePrice <= 0)
+            if (price <= 0)
             {
-                throw new ArgumentException("Giá mua lớn hơn 0");
+                throw new ArgumentException("Giá mua phải lớn hơn 0.");
             }
-            this.deviceID = deviceID;
-            this.deviceName = deviceName;
-            this.usageYear = usageYear;
-            this.purchasePrice = purchasePrice;
+
+            this.deviceId = deviceId;
+            this.name = name;
+            this.yearOfUse = yearOfUse;
+            this.price = price;
             this.status = status;
         }
+
+        public string DeviceId
+        {
+            get { return deviceId; }
+        }
+
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
+        }
+
+        public int YearOfUse
+        {
+            get { return yearOfUse; }
+            set { yearOfUse = value; }
+        }
+
+        public decimal Price
+        {
+            get { return price; }
+            set { price = value; }
+        }
+
+        public DeviceStatus Status
+        {
+            get { return status; }
+            set { status = value; }
+        }
+
         public abstract decimal CalculateAnnualMaintenanceCost();
+
+        public virtual void MarkAsBorrowed()
+        {
+            this.status = DeviceStatus.Borrowed;
+        }
+
+        public virtual void MarkAsAvailable()
+        {
+            this.status = DeviceStatus.Available;
+        }
+
+        public virtual void MarkAsUnderMaintenance()
+        {
+            this.status = DeviceStatus.UnderMaintenance;
+        }
+
         public override string ToString()
         {
-            return $"Mã: {deviceID} - Tên: {deviceName} - Năm sử dụng: {usageYear} - Giá mua: {purchasePrice} - Trạng thái: {status}";
-        }        
+            return "[" + deviceId + "] " + name + " - Năm SD: " + yearOfUse + " - Giá: " + price.ToString("N0") + " VNĐ - Trạng thái: " + status;
+        }
     }
 }

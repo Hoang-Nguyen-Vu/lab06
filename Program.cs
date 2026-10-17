@@ -1,95 +1,127 @@
 //Hoàng Nguyên Vũ
 //202419020
 using System;
-namespace DeviceManagement
+using DeviceManagement;
+class Program
 {
-    class Program
+    static void Main()
     {
-        static void Main(string[] args)
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        DateTime borrowDate = new DateTime(2026, 10, 10, 8, 0, 0);
+
+        Console.WriteLine("===== 11.1. LUỒNG THÀNH CÔNG =====");
+        Lecturer gv = new Lecturer("GV01", "Nguyễn Văn A", "CNTT");
+        ProjectorRemote pj = new ProjectorRemote("PJ01", "Remote máy chiếu Epson", 2024, 500000m, 1);
+        AirConditionerRemote ac = new AirConditionerRemote("AC01", "Remote điều hòa Daikin", 2023, 300000m, 1);
+        Microphone mic = new Microphone("MIC01", "Micro Shure", 2022, 2000000m, 1, true);
+
+        ClassRoom room = new ClassRoom("P101", "Phòng 101", 10);
+        room.AddDevice(pj); room.AddDevice(ac); room.AddDevice(mic);
+        Console.WriteLine(room);
+        Console.WriteLine("Chi phí bảo trì năm của phòng: " + room.CalculateAnnualMaintenanceCost().ToString("N0") + " VNĐ");
+
+        BorrowingSlip slip1 = new BorrowingSlip("S01", gv, "P101", borrowDate);
+        try
         {
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            slip1.AddDevice(pj, 1);
+            slip1.AddDevice(mic, 1);
+            decimal f1 = slip1.ReturnDevice("PJ01", borrowDate.AddDays(1));
+            Console.WriteLine("Trả PJ01 đúng hạn, phí trễ = " + f1.ToString("N0"));
+            decimal f2 = slip1.ReturnDevice("MIC01", borrowDate.AddDays(3));
+            Console.WriteLine("Trả MIC01 muộn 2 ngày, phí trễ = " + f2.ToString("N0"));
+        }
+        catch (BorrowingException ex) { Console.WriteLine("Lỗi: " + ex.Message); }
 
-            // 2 máy tính, 1 máy có GPU rời
-            Computer pc1 = new Computer("PC01", "Dell OptiPlex 7090", 2022, 15000000m, 16, "Core i5", false, Device.DeviceStatus.Active);
-            Computer pc2 = new Computer("PC02", "ASUS ROG Gaming", 2018, 30000000m, 32, "Core i7", true, Device.DeviceStatus.UnderMaintenance);
+        BorrowingSlip slip2 = new BorrowingSlip("S02", gv, "P102", borrowDate);
+        slip2.AddDevice(ac, 1);
 
-            // 2 máy in, 1 máy in > 100.000 trang
-            Printer pr1 = new Printer("PR01", "Canon LBP2900", 2023, 4000000m, "laser", 20000, false);
-            NetworkPrinter pr2 = new NetworkPrinter("PR02", "HP LaserJet Pro", 2019, 12000000m, "laser", 120000, true, "192.168.1.50");
+        BorrowingSlip[] slips = { slip1, slip2 };
+        Console.WriteLine("\n--- Các mục trả muộn ---");
+        foreach (BorrowingSlip s in slips)
+            foreach (BorrowItem it in s.Items)
+                if (it.IsReturned && it.ReturnedDate.Value.Date > it.DueDate.Date)
+                    Console.WriteLine(s.SlipId + " " + it);
+        Console.WriteLine("--- Các mục chưa trả ---");
+        foreach (BorrowingSlip s in slips)
+            foreach (BorrowItem it in s.Items)
+                if (!it.IsReturned)
+                    Console.WriteLine(s.SlipId + " " + it);
+        Console.WriteLine("Tổng phí trễ phiếu S01: " + slip1.CalculateTotalLateFee().ToString("N0"));
 
-            // bóng đèn sử dụng > 3.000 giờ
-            Projector pj1 = new Projector("PJ01", "Sony VPL-EX570", 2020, 10000000m, 4000, 3500);
+        Console.WriteLine("\n===== 11.2. LUỒNG NGOẠI LỆ =====");
+        Lecturer gv2 = new Lecturer("GV02", "Trần Thị B", "Toán");
+        TeachingAssistant ta = new TeachingAssistant("TA01", "Lê Văn C", "OOP");
 
-            // 2 phòng thực hành
-            LabRoom lab1 = new LabRoom("LAB01", "Phòng Máy Tính 1", 30);
-            LabRoom lab2 = new LabRoom("LAB02", "Phòng Đa Phương Tiện 2", 20);
+        Run("1. Mượn remote điều hòa đang UnderMaintenance", () =>
+        {
+            var acm = new AirConditionerRemote("AC02", "Remote điều hòa hỏng", 2020, 300000m, 1, DeviceStatus.UnderMaintenance);
+            new BorrowingSlip("E1", gv2, "P201", borrowDate).AddDevice(acm, 1);
+        });
 
-            //1 Thêm thiết bị vào phòng
-            lab1.AddDevice(pc1);
-            lab1.AddDevice(pc2);
-            lab1.AddDevice(pr1);
-            lab2.AddDevice(pr2);
-            lab2.AddDevice(pj1);
-            Console.WriteLine("Đã thêm PC01, PC02, PR01 vào phòng 1.");
-            Console.WriteLine("Đã thêm PR02, PJ01 vào phòng 2.");
+        Run("2. Trợ giảng mượn thiết bị thứ ba", () =>
+        {
+            var s = new BorrowingSlip("E2", ta, "P202", borrowDate);
+            s.AddDevice(new ProjectorRemote("PJ10", "Remote 10", 2024, 400000m, 1), 1);
+            s.AddDevice(new ProjectorRemote("PJ11", "Remote 11", 2024, 400000m, 1), 1);
+            s.AddDevice(new ProjectorRemote("PJ12", "Remote 12", 2024, 400000m, 1), 1);
+        });
 
-            //2 Thử thêm thiết bị bị trùng mã
-            Console.WriteLine("\n Thêm thiết bị trùng mã PC01 vào LAB01:");
-            try
-            {
-                Computer pcTrung = new Computer("PC01", "Máy tính trùng mã", 2024, 12000000m, 8, "Core i3", false);
-                lab1.AddDevice(pcTrung);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+        Run("3. Thêm cùng một micro hai lần", () =>
+        {
+            var m = new Microphone("MIC10", "Micro 10", 2024, 1000000m, 1, false);
+            var s = new BorrowingSlip("E3", gv2, "P203", borrowDate);
+            s.AddDevice(m, 1);
+            s.AddDevice(m, 1);
+        });
 
-            //3 In danh sách thiết bị trong từng phòng
-            Console.WriteLine("\nDanh sách thiết bị trong từng phòng:");
-            Console.WriteLine(lab1.ToString());
-            Console.WriteLine(lab2.ToString());
+        Run("4. Mượn micro 3 ngày (giới hạn 1 ngày)", () =>
+        {
+            var m = new Microphone("MIC11", "Micro 11", 2024, 1000000m, 1, false);
+            var s = new BorrowingSlip("E4", gv2, "P204", borrowDate);
+            try { s.AddDevice(m, 3); }
+            finally { Console.WriteLine("   Sau lỗi: micro = " + m.Status + ", số item trong phiếu = " + s.Items.Length); }
+        });
 
-            //4 Tính tổng chi phí bảo trì dự kiến của mỗi phòng
-            Console.WriteLine("\nTổng chi phí bảo trì dự kiến của mỗi phòng:");
-            Console.WriteLine("Chi phí phòng 1: " + lab1.CalculateAnnualMaintenanceCost().ToString("N0"));
-            Console.WriteLine("Chi phí phòng 2: " + lab2.CalculateAnnualMaintenanceCost().ToString("N0"));
+        Run("5. Trả remote máy chiếu không thuộc phiếu", () =>
+        {
+            var s = new BorrowingSlip("E5", gv2, "P205", borrowDate);
+            s.AddDevice(new Microphone("MIC12", "Micro 12", 2024, 1000000m, 1, false), 1);
+            s.ReturnDevice("PJ99", borrowDate.AddDays(1));
+        });
 
-            // Liệt kê thiết bị cần bảo trì
-            Console.WriteLine("\nLiệt kê thiết bị cần bảo trì:");
-            Device[] bt1 = lab1.GetDevicesRequiringMaintenance();
-            Console.WriteLine("Phòng 1, " + bt1.Length + " thiết bị:");
-            for (int i = 0; i < bt1.Length; i++)
-            {
-                Console.WriteLine("  + " + bt1[i].ToString());
-            }
+        Run("6. Trả cùng một thiết bị hai lần", () =>
+        {
+            var s = new BorrowingSlip("E6", gv2, "P206", borrowDate);
+            s.AddDevice(new ProjectorRemote("PJ20", "Remote 20", 2024, 400000m, 1), 1);
+            s.ReturnDevice("PJ20", borrowDate.AddDays(1));
+            s.ReturnDevice("PJ20", borrowDate.AddDays(1));
+        });
 
-            Device[] bt2 = lab2.GetDevicesRequiringMaintenance();
-            Console.WriteLine("Phòng 2, " + bt2.Length + " thiết bị:");
-            for (int i = 0; i < bt2.Length; i++)
-            {
-                Console.WriteLine("  + " + bt2[i].ToString());
-            }
+        Run("7. Trả với ngày trả trước ngày mượn", () =>
+        {
+            var p = new ProjectorRemote("PJ30", "Remote 30", 2024, 400000m, 1);
+            var s = new BorrowingSlip("E7", gv2, "P207", borrowDate);
+            s.AddDevice(p, 1);
+            try { s.ReturnDevice("PJ30", borrowDate.AddDays(-1)); }
+            finally { Console.WriteLine("   Trạng thái thiết bị sau lỗi: " + p.Status + " (vẫn Borrowed)"); }
+        });
+    }
 
-            //6 Kết nối mạng cho các đối tượng thực thi INetworkable
-            Console.WriteLine("\n Kết nối mạng cho các đối tượng thực thi INetworkable:");
-            pc1.Connect("192.168.1.101");
-            pc2.Connect("192.168.1.102");
-            pr2.Connect("192.168.1.103");
-            Console.WriteLine("Đã gọi Connect() cho PC01, PC02 và PR02.");
-
-            //7 Duyệt các thiết bị mạng thông qua kiểu INetworkable
-            Console.WriteLine("\n Duyệt thiết bị mạng thông qua kiểu INetworkable:");
-            Device[] allDevices = new Device[] { pc1, pc2, pr1, pr2, pj1 };
-            for (int i = 0; i < allDevices.Length; i++)
-            {
-                if (allDevices[i] is INetworkable)
-                {
-                    INetworkable net = (INetworkable)allDevices[i];
-                    Console.WriteLine(allDevices[i].ToString());
-                    Console.WriteLine("   IP: " + net.IpAddress + " | Status: " + (net.IsConnected ? "Connected" : "Disconnected"));
-                }
-            }
+    static void Run(string title, Action action)
+    {
+        Console.WriteLine("\n" + title);
+        try
+        {
+            action();
+            Console.WriteLine("   (không có lỗi)");
+        }
+        catch (BorrowingException ex)
+        {
+            Console.WriteLine("   Bắt " + ex.GetType().Name + ": " + ex.Message);
+        }
+        finally
+        {
+            Console.WriteLine("   [finally] kết thúc tình huống.");
         }
     }
 }

@@ -1,28 +1,55 @@
-//Hoàng Nguyên Vũ
-// 202419020
+//Hoàng Nguyên Vũ 
+//202419020
 using System;
 namespace DeviceManagement
 {
-    public class LabRoom
+    public class ClassRoom
     {
         private string roomId;
         private string roomName;
         private int capacity;
         private Device[] devices;
         private int count;
-        public LabRoom(string roomId, string roomName, int capacity)
+
+        public string RoomId
         {
-            if (roomId == "")
+            get { return roomId; }
+        }
+
+        public string RoomName
+        {
+            get { return roomName; }
+            set { roomName = value; }
+        }
+
+        public int Capacity
+        {
+            get { return capacity; }
+            set { capacity = value; }
+        }
+
+        public Device[] Devices
+        {
+            get
             {
-                throw new ArgumentException("Mã phòng không rỗng");
+                Device[] result = new Device[count];
+                for (int i = 0; i < count; i++)
+                {
+                    result[i] = devices[i];
+                }
+                return result;
             }
-            if (roomName == "")
+        }
+
+        public ClassRoom(string roomId, string roomName, int capacity)
+        {
+            if (roomId == null || roomId == "")
             {
-                throw new ArgumentException("Tên phòng không rỗng");
+                throw new ArgumentException("Mã phòng không được để trống.");
             }
             if (capacity <= 0)
             {
-                throw new ArgumentException("Sức chứa phải > 0");
+                throw new ArgumentException("Sức chứa phòng phải lớn hơn 0.");
             }
 
             this.roomId = roomId;
@@ -34,42 +61,44 @@ namespace DeviceManagement
 
         public Device FindDevice(string deviceId)
         {
-            if (deviceId == "")
+            if (deviceId == null || deviceId == "")
             {
                 return null;
             }
-
             for (int i = 0; i < count; i++)
             {
-                if (devices[i].DeviceID == deviceId)
+                if (devices[i].DeviceId == deviceId)
                 {
                     return devices[i];
                 }
             }
             return null;
         }
+
         public void AddDevice(Device device)
         {
             if (device == null)
             {
-                throw new ArgumentException("Thiết bị không được null");
+                throw new ArgumentNullException("Không chấp nhận đối tượng thiết bị null.");
             }
-            if (FindDevice(device.DeviceID) != null)
+            if (FindDevice(device.DeviceId) != null)
             {
-                throw new ArgumentException("Thiết bị này đã tồn tại trong phòng");
+                throw new InvalidOperationException("Thiết bị mã " + device.DeviceId + " đã tồn tại trong phòng " + roomId + ".");
             }
-            if (count >= capacity)
+            if (count >= devices.Length)
             {
-                throw new ArgumentException("Phòng đã chứa tối đa");
+                throw new InvalidOperationException("Phòng đã chứa tối đa " + devices.Length + " thiết bị.");
             }
+
             devices[count] = device;
             count++;
         }
+
         public bool RemoveDevice(string deviceId)
         {
             for (int i = 0; i < count; i++)
             {
-                if (devices[i].DeviceID == deviceId)
+                if (devices[i].DeviceId == deviceId)
                 {
                     for (int j = i; j < count - 1; j++)
                     {
@@ -82,6 +111,7 @@ namespace DeviceManagement
             }
             return false;
         }
+
         public decimal CalculateAnnualMaintenanceCost()
         {
             decimal totalCost = 0;
@@ -91,22 +121,24 @@ namespace DeviceManagement
             }
             return totalCost;
         }
+
         public Device[] GetDevicesRequiringMaintenance()
         {
-            int currentYear = 2026;
+            int currentYear = DateTime.Now.Year;
             int matchCount = 0;
             for (int i = 0; i < count; i++)
             {
-                if (devices[i].Status == Device.DeviceStatus.UnderMaintenance || (currentYear - devices[i].UsageYear) > 5)
+                if (devices[i].Status == DeviceStatus.UnderMaintenance || (currentYear - devices[i].YearOfUse) > 5)
                 {
                     matchCount++;
                 }
             }
+
             Device[] result = new Device[matchCount];
             int index = 0;
             for (int i = 0; i < count; i++)
             {
-                if (devices[i].Status == Device.DeviceStatus.UnderMaintenance || (currentYear - devices[i].UsageYear) > 5)
+                if (devices[i].Status == DeviceStatus.UnderMaintenance || (currentYear - devices[i].YearOfUse) > 5)
                 {
                     result[index] = devices[i];
                     index++;
@@ -114,9 +146,10 @@ namespace DeviceManagement
             }
             return result;
         }
+
         public override string ToString()
         {
-            return "Mã phòng: " + roomId + " - Tên phòng: " + roomName + " - Sức chứa: " + capacity + " - Số thiết bị: " + count;
+            return "Phòng " + roomId + " - " + roomName + " (Sức chứa: " + capacity + ") - Số thiết bị: " + count;
         }
     }
 }
